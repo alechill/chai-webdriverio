@@ -1,5 +1,11 @@
 import elementExists from '../util/element-exists';
 import configWithDefaults from '../util/default-config';
+import expectedMessage from '../util/expected-message';
+import shouldWait from '../util/should-wait';
+import {
+    describesWebElement,
+    webElemement
+} from '../util/web-element';
 
 function hasCount(client, selector, count, countStore) {
     const elements = client.elements(selector).value;
@@ -38,9 +44,13 @@ export default function count(client, chai, utils, options) {
     chai.Assertion.addMethod('count', function(expected) {
         const selector =  utils.flag(this, 'object');
         const negate = utils.flag(this, 'negate');
-        const immediately = utils.flag(this, 'immediately');
 
-        if (!immediately) {
+        if (describesWebElement(selector)) {
+            throw new Error('Can only count matches for a selector, but was provided a solitary WebElement, ' +
+                                'as Highlander put it... "There can be only One! <========|==o "')
+        }
+
+        if (shouldWait(this, utils)) {
             waitUntilCount(client, selector, expected, config.defaultWait, negate);
         }
 
@@ -48,8 +58,8 @@ export default function count(client, chai, utils, options) {
 
         this.assert(
             hasCount(client, selector, expected, countStore),
-            `Expected ${selector} to appear in the DOM ${expected} times, but it shows up ${countStore.count} times instead.`,
-            `Expected ${selector} not to appear in the DOM ${expected} times, but it does.`
+            expectedMessage(selector, `to appear in the DOM ${expected} times, but it shows up ${countStore.count} times instead.`),
+            expectedMessage(selector, `not to appear in the DOM ${expected} times, but it does.`)
         );
     });
 }

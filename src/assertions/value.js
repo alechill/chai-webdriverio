@@ -1,17 +1,22 @@
 import elementExists from '../util/element-exists';
 import configWithDefaults from '../util/default-config';
+import expectedMessage from '../util/expected-message';
+import shouldWait from '../util/should-wait';
+import {
+    describesWebElement,
+    webElemement
+} from '../util/web-element';
 
 export default function value(client, chai, utils, options) {
     const config = configWithDefaults(options);
     chai.Assertion.addMethod('value', function(expected) {
         const selector =  utils.flag(this, 'object');
-        const immediately = utils.flag(this, 'immediately');
 
-        if(!immediately) {
+        if (shouldWait(this, utils)) {
             elementExists(client, selector, config.defaultWait);
         }
 
-        const elementValue = client.getValue(selector);
+        const elementValue = describesWebElement(selector) ? webElement(selector).getValue() : client.getValue(selector);
         const valueArray = (elementValue instanceof Array) ? elementValue : [elementValue];
 
         var elementValueAsExpected;
@@ -23,8 +28,8 @@ export default function value(client, chai, utils, options) {
 
         this.assert(
             elementValueAsExpected,
-            `Expected an element matching <${selector}> to contain value "${expected}", but only found these values: ${valueArray}`,
-            `Expected an element matching <${selector}> not to contain value "${expected}", but found these values: ${valueArray}`
+            expectedMessage(selector, ` to contain value "${expected}", but only found these values: ${valueArray}`),
+            expectedMessage(selector, ` not to contain value "${expected}", but found these values: ${valueArray}`)
         );
     });
 }
